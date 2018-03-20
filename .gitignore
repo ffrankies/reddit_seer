@@ -102,3 +102,4 @@ ENV/
 
 # other
 praw.ini
+data/
