@@ -6,6 +6,8 @@ import datetime
 import argparse
 
 import praw
+import pathlib
+import csv
 
 
 TODAY = datetime.datetime.utcnow()
@@ -45,21 +47,44 @@ def get_submissions(subreddit: str, from_date: datetime.datetime, to_date: datet
     - submissions (list<praw.Submission>): The list of submissions found
     """
     reddit = praw.Reddit('reddit_seer')
-    submissions = list()
     returned_submissions = api_request(reddit, subreddit, from_date, to_date)
-    i = 0
+    num_submissions = 0
     while returned_submissions:
-        i += 1
-        print('Got {} submissions from {} until {}'.format(1000*i, 
+        num_submissions += len(returned_submissions)
+        print('Got {} submissions from {} until {}'.format(num_submissions, 
               datetime.datetime.fromtimestamp(returned_submissions[0].created),
               datetime.datetime.fromtimestamp(returned_submissions[-1].created)))
-        submissions.extend(returned_submissions)
+        submissions_to_csv(subreddit, returned_submissions)
         to_date_timestamp = returned_submissions[-1].created
         to_date = datetime.datetime.fromtimestamp(to_date_timestamp-1)
         returned_submissions = api_request(reddit, subreddit, from_date, to_date)
-    print("Got {:d} submissions!".format(len(submissions)))
-    return submissions
+    print("Got {:d} submissions!".format(num_submissions))
 # End of get_submissions()
+
+
+def submissions_to_csv(subreddit: str, submissions: list):
+    """Saves the submissions as a csv file in data/<subreddit>/submissions.csv.
+
+    Params:
+    - subreddit (str): The subreddit for which the submissions were obtained
+    - submissions (list<praw.Submission>): The submissions returned from the reddit API
+    """
+    directory_path = pathlib.Path("./data/{}".format(subreddit))
+    directory_path.mkdir(parents=True, exist_ok=True)
+    file_path = directory_path / 'submissions.csv'
+    new_file = True
+    if file_path.is_file():  # pylint: disable=E1101
+        new_file = False
+    with file_path.open('a') as csv_file:  # pylint: disable=E1101
+        csv_writer = csv.writer(csv_file)
+        if new_file:  # Write headings
+            csv_writer.writerow(
+                ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext'])
+        for submission in submissions:
+            csv_writer.writerow([submission.title, submission.score, submission.ups, submission.downs, 
+                                submission.num_comments, submission.over_18, 
+                                datetime.datetime.fromtimestamp(submission.created_utc), submission.selftext])
+# End of submissions_to_csv()
 
 
 def date_type(date_arg: str) -> datetime.datetime:
@@ -105,5 +130,4 @@ def parse_arguments() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_arguments()
-    subs = get_submissions(args.subreddit, args.from_date, args.until_date)
-    print('Hello World!')
+    get_submissions(args.subreddit, args.from_date, args.until_date)
