@@ -49,11 +49,11 @@ def get_submissions(subreddit: str, from_date: datetime.datetime, to_date: datet
     reddit = praw.Reddit('reddit_seer')
     returned_submissions = api_request(reddit, subreddit, from_date, to_date)
     num_submissions = 0
+    original_to_date = to_date
     while returned_submissions:
         num_submissions += len(returned_submissions)
         print('Got {} submissions from {} until {}'.format(num_submissions, 
-              datetime.datetime.fromtimestamp(returned_submissions[0].created),
-              datetime.datetime.fromtimestamp(returned_submissions[-1].created)))
+              datetime.datetime.fromtimestamp(returned_submissions[-1].created), original_to_date))
         submissions_to_csv(subreddit, returned_submissions)
         to_date_timestamp = returned_submissions[-1].created
         to_date = datetime.datetime.fromtimestamp(to_date_timestamp-1)
@@ -83,7 +83,8 @@ def submissions_to_csv(subreddit: str, submissions: list):
         for submission in submissions:
             csv_writer.writerow([submission.title, submission.score, submission.ups, submission.downs, 
                                 submission.num_comments, submission.over_18, 
-                                datetime.datetime.fromtimestamp(submission.created_utc), submission.selftext])
+                                datetime.datetime.fromtimestamp(submission.created_utc), 
+                                submission.selftext.replace('\n', "\\n")])
 # End of submissions_to_csv()
 
 
