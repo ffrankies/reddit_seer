@@ -5,6 +5,8 @@ import pathlib
 import argparse
 import csv
 
+import pandas as pd
+
 
 class ColumnIndexes:
     title = 0
@@ -48,6 +50,22 @@ def read_csv(subreddit: str) -> list:
 # End of read_csv()
 
 
+def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
+    """Reads csv data from the given file, filters out the 'wrong' rows, and stores it in a data frame.
+
+    Params:
+    - subreddit (str): The name of the subreddit whose posts are being analyzed
+
+    Returns:
+    - data_frame (pd.DataFrame): The data frame containing the post data
+    """
+    csv_data = read_csv(subreddit)
+    data_frame = pd.DataFrame(csv_data)
+    data_frame.columns = ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext']
+    print(data_frame.head())
+# End of csv_to_data_frame()
+
+
 def parse_arguments() -> argparse.Namespace:
     """Parses the given command-line arguments.
 
@@ -65,5 +83,5 @@ def parse_arguments() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_arguments()
-    read_csv(args.subreddit)
+    csv_to_data_frame(args.subreddit)
     print('Hello World!')
