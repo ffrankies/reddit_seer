@@ -4,8 +4,10 @@
 import pathlib
 import argparse
 import csv
+import itertools
 
 import pandas as pd
+import nltk
 
 
 class ColumnIndexes:
@@ -63,6 +65,7 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     data_frame = pd.DataFrame(csv_data)
     data_frame.columns = ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext']
     print(data_frame.head())
+    return data_frame
 # End of csv_to_data_frame()
 
 
@@ -81,7 +84,45 @@ def parse_arguments() -> argparse.Namespace:
 # End of parse_arguments()
 
 
+def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Preprocesses the text in the given column of a data frame and returns it as a new data frame with just 
+    that column. 
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing text data
+    - column (str): The name of the column for which to create the bag of words
+
+    Returns:
+    - modified_data_frame (pd.DataFrame): The data frame with the preprocessed column
+    """
+    column_data = data_frame[column]
+    column_data = column_data.apply(lambda a: a.lower())
+    column_data = column_data.apply(nltk.word_tokenize)
+    column_data = column_data.apply(lambda a: [word for word in a if len(word) > 1])
+    column_data = column_data.apply(lambda a: [word for word in a if not word.isnumeric()])
+    return column_data
+# End of preprocess_text()
+
+
+def bag_of_words(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Creates a bag of words out of the text in the given column of the data frame.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing text data
+    - column (str): The name of the column for which to create the bag of words
+
+    Returns:
+    - modified_data_frame (pd.DataFrame): The data frame with the given column replaced with the bag of words
+    """
+    column_data = preprocess_text(data_frame, column)
+    wordlist = column_data.values.tolist()
+    vocab = nltk.FreqDist(itertools.chain(*wordlist))
+    print(vocab.most_common(10))
+# End of bag_of_words()
+
+
 if __name__ == '__main__':
     args = parse_arguments()
-    csv_to_data_frame(args.subreddit)
+    data_frame = csv_to_data_frame(args.subreddit)
+    bag_of_words(data_frame, 'title')
     print('Hello World!')
