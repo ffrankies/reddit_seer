@@ -1,8 +1,15 @@
+#!/usr/bin/env python3
+
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 """
+Takes in a sentenze 
 """
-def analyzeSentiment():
+def analyzeSentenceSentiment():
+    print()
+
+def analyzeParagraphSentiment():
+    print()
 
 
 sentences = ["VADER is smart, handsome, and funny.", # positive sentence example
