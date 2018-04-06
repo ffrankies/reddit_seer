@@ -108,8 +108,8 @@ if __name__ == '__main__':
         print(ss['compound'], analyzeSentiment(long))
 
     # Do not run this, trust me
-    # VADER:
-    # Lemmatized: 
+    # VADER: 1.0
+    # Lemmatized: 1.0
     # from nltk.corpus import gutenberg
     # print()
     # bible = gutenberg.raw('bible-kjv.txt')
