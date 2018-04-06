@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Analyzes the sentiment of a text. USes the VADER lexicon for determining word
+value multiplier. Any words not in the VADER lexicon are given adjectives in
+hopes that the new word exists in the lexiconself.
+
+@author Troy Madsen
+"""
+
 from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
@@ -27,12 +35,11 @@ def tokenizeNonStopWords(s):
 
 
 
-#FIXME add the return statement
 """
 Takes in a body of text and returns compound, negative, neutral, and positive sentiment
 
 @param sent_text Body of text to analyze the sentiment of
-@return
+@return The sentiment score of a text ranging from -1 to 1
 """
 def analyzeSentiment(sent_text):
     # Get all non-stopwords if a dict of form {index: word}
