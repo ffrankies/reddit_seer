@@ -89,9 +89,25 @@ if __name__ == '__main__':
         "Troy is the coolest person in the world!" # Normal VADER cannot handle this. analyzeSentiment can
     ]
 
-    sid = SentimentIntensityAnalyzer()
+    longs = ["Sometimes I wish I was a doctor. The human body is so interesting! My girlfriend always tells me all about the different things she is doing in her anatomy lab. Sometimes they are disturbing and sometimes they are really interesting. It's always something new that I've never heard of. At least I get to make computers do cool things!",
+        "My roommate tries to make spicey memes. They usually fall flat. I'll just tell him to try harder if he want to achieve fame. Fame might be kinda nice to try. I'd like to start-up a company larger than Apple or Microsoft. Running a business would allow me to create my crazy ideas."
+    ]
+
+    sia = SentimentIntensityAnalyzer()
 
     for sentence in sentences:
         print(sentence)
-        ss = sid.polarity_scores(sentence)
+        ss = sia.polarity_scores(sentence)
         print(ss['compound'], analyzeSentiment(sentence))
+
+    print('\n\n')
+
+    for long in longs:
+        print(long)
+        ss = sia.polarity_scores(long)
+        print(ss['compound'], analyzeSentiment(long))
+
+    # import nltk.corpus.gutenberg as gut
+    # bible = gut.raw('bible-kjv.txt')
+    # print('VADER: {}'.format(sia.polarity_scores(bible)['compound']))
+    # print('Lemmatized: {}'.format(analyzeSentiment(bible))
