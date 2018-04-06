@@ -107,7 +107,11 @@ if __name__ == '__main__':
         ss = sia.polarity_scores(long)
         print(ss['compound'], analyzeSentiment(long))
 
-    # import nltk.corpus.gutenberg as gut
-    # bible = gut.raw('bible-kjv.txt')
+    # Do not run this, trust me
+    # VADER:
+    # Lemmatized: 
+    # from nltk.corpus import gutenberg
+    # print()
+    # bible = gutenberg.raw('bible-kjv.txt')
     # print('VADER: {}'.format(sia.polarity_scores(bible)['compound']))
-    # print('Lemmatized: {}'.format(analyzeSentiment(bible))
+    # print('Lemmatized: {}'.format(analyzeSentiment(bible)))
