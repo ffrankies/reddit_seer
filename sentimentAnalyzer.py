@@ -1,22 +1,72 @@
 #!/usr/bin/env python3
 
+from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from nltk.tokenize.moses import MosesDetokenizer
 
 """
-Takes in a sentence and returns compound, negative, neutral, and positive sentiment
+Tokenizes a string and returns dict of all non-stopwords
 
-@param s
-@return compound, negative, neutral, positive
+@param s String to tokenize into dict
+@return Dict containing all non-stopwords from the input string
 """
-def analyzeSentenceSentiment(s):
-    sid = SentimentIntensityAnalyzer()
-    ss = sid.polarity_scores(s)
-    for k in sorted(ss):
-        print('{0}: {1}, '.format(k, ss[k]), end='')
-    return [ss[k] for k in sorted(ss)]
+def tokenizeNonStopWords(s):
+    # Tokenize and create a dictionary of all words
+    words = word_tokenize(s)
+    words = dict(enumerate(words))
 
-def analyzeParagraphSentiment():
-    print()
+    # Remove all stopwords from the dictionary
+    stop_words = set(stopwords.words("english"))
+    for i in range(len(words)):
+        if words[i] in stop_words:
+            words.pop(i)
+
+    return words
+
+
+
+#FIXME add the return statement
+"""
+Takes in a body of text and returns compound, negative, neutral, and positive sentiment
+
+@param sent_text Body of text to analyze the sentiment of
+@return
+"""
+def analyzeSentiment(sent_text):
+    # Get all non-stopwords if a dict of form {index: word}
+    nonStopWords = tokenizeNonStopWords(sent_text)
+
+    # All words tokenized
+    tokens = word_tokenize(sent_text)
+
+    # Determine if each word is in VADER corpus
+    # if in corpus, leave it alone
+    # if not in corpus, attempt lemmatizing to see if in corpus
+    # Dictionary of all VADER words
+    sia = SentimentIntensityAnalyzer()
+    lex_dict = sia.make_lex_dict()
+    lemmatizer = WordNetLemmatizer()
+    for key, val in nonStopWords.items():
+        # Check if lexicon has this word
+        hasWord = lex_dict.get(val, None)
+        if hasWord == None:
+            # Word not in lex_dict
+            # Lemmatize assuming adjective and replace word
+            tokens[key] = lemmatizer.lemmatize(val, 'a')
+
+    # Detokenize to modified sentiment text
+    detokenizer = MosesDetokenizer()
+    mod_text = detokenizer.detokenize(tokens, return_str=True)
+
+    # Get sentiment scores
+    sentiment = sia.polarity_scores(mod_text)
+
+    # Only interested in the compound score
+    return sentiment['compound']
+
+
 
 if __name__ == '__main__':
     sentences = ["VADER is smart, handsome, and funny.", # positive sentence example
@@ -35,7 +85,8 @@ if __name__ == '__main__':
         "Today sux",     #  negative slang handled
         "Today sux!",    #  negative slang with punctuation emphasis handled
         "Today SUX!",    #  negative slang with capitalization emphasis
-        "Today kinda sux! But I'll get by, lol" # mixed sentiment example with slang and constrastive conjunction "but"
+        "Today kinda sux! But I'll get by, lol", # mixed sentiment example with slang and constrastive conjunction "but"
+        "Troy is the coolest person in the world!" # Normal VADER cannot handle this. analyzeSentiment can
     ]
 
     sid = SentimentIntensityAnalyzer()
@@ -43,6 +94,4 @@ if __name__ == '__main__':
     for sentence in sentences:
         print(sentence)
         ss = sid.polarity_scores(sentence)
-        for k in sorted(ss):
-            print('{0}: {1}, '.format(k, ss[k]), end='')
-        print()
+        print(ss['compound'], analyzeSentiment(sentence))

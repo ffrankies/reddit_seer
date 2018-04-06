@@ -9,3 +9,4 @@ This script installs the necessary nltk.vader dependencies
 if __name__ == '__main__':
     import nltk
     nltk.download('vader_lexicon')
+    nltk.download('perluniprops')
