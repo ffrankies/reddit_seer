@@ -17,7 +17,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from nltk.tokenize.moses import MosesDetokenizer
 
-def tokenizeNonStopWords(s):
+def tokenizeNonStopWords(s: str):
     """
     Tokenizes a string and returns dict of all non-stopwords
 
@@ -39,7 +39,7 @@ def tokenizeNonStopWords(s):
 
 
 
-def analyzeSentiment(sent_text):
+def analyzeSentiment(sent_text: str):
     """
     Takes in a body of text and returns compound, negative, neutral, and positive sentiment
 
