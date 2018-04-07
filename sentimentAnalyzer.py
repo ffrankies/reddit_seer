@@ -5,7 +5,10 @@ Analyzes the sentiment of a text. USes the VADER lexicon for determining word
 value multiplier. Any words not in the VADER lexicon are given adjectives in
 hopes that the new word exists in the lexiconself.
 
-@author Troy Madsen
+:author Troy Madsen
+:author Frank Wanye
+:author Kellin McAvoy
+:author Andrew Prins
 """
 
 from nltk.corpus import stopwords
@@ -14,13 +17,14 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from nltk.tokenize.moses import MosesDetokenizer
 
-"""
-Tokenizes a string and returns dict of all non-stopwords
-
-@param s String to tokenize into dict
-@return Dict containing all non-stopwords from the input string
-"""
 def tokenizeNonStopWords(s):
+    """
+    Tokenizes a string and returns dict of all non-stopwords
+
+    :param s String to tokenize into dict
+    :returns Dict containing all non-stopwords from the input string
+    """
+
     # Tokenize and create a dictionary of all words
     words = word_tokenize(s)
     words = dict(enumerate(words))
@@ -35,13 +39,14 @@ def tokenizeNonStopWords(s):
 
 
 
-"""
-Takes in a body of text and returns compound, negative, neutral, and positive sentiment
-
-@param sent_text Body of text to analyze the sentiment of
-@return The sentiment score of a text ranging from -1 to 1
-"""
 def analyzeSentiment(sent_text):
+    """
+    Takes in a body of text and returns compound, negative, neutral, and positive sentiment
+
+    :param sent_text Body of text to analyze the sentiment of
+    :returns The sentiment score of a text ranging from -1 to 1
+    """
+
     # Get all non-stopwords if a dict of form {index: word}
     nonStopWords = tokenizeNonStopWords(sent_text)
 
