@@ -4,11 +4,11 @@
 import pathlib
 import argparse
 import csv
-import itertools
 
 import pandas as pd
 import nltk
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 
 
 class ColumnIndexes:
@@ -114,14 +114,18 @@ def bag_of_words(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     - column (str): The name of the column for which to create the bag of words
 
     Returns:
-    - bags (pd.DataFrame): The data frame containing the bags of words for each item in the given column
+    - bags_data_frame (pd.DataFrame): The data frame containing the bags of words for each item in the given column
     """
     data_frame_copy = data_frame.copy()
     column_data = preprocess_text(data_frame_copy, column)
     entries = column_data.values.tolist()
+    # Create bags of words using counts
     countVectorizer = CountVectorizer()
     bag = countVectorizer.fit_transform(entries)
-    bags = bag.toarray()
+    # Use term frequency and inverse-document frequency to normalize the bag of words counts
+    tfidf = TfidfTransformer(use_idf=True, norm='l2', smooth_idf=True)
+    bags = tfidf.fit_transform(bag)
+    bags = bags.toarray()
     bags_data_frame = pd.DataFrame(bags, columns=countVectorizer.vocabulary_.keys())
     print(bags_data_frame.head())
     return bags_data_frame
