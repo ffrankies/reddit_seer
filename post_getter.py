@@ -4,8 +4,8 @@ Authors: Frank Wanye, Kellin McAvoy, Andrew Prins, Troy Madsen
 """
 import datetime
 import argparse
+import requests
 
-import praw
 import pathlib
 import csv
 
@@ -15,49 +15,66 @@ ONE_MONTH_DELTA = datetime.timedelta(days=30)
 MINUS_ONE_MONTH = TODAY - ONE_MONTH_DELTA
 
 
-def api_request(reddit: praw.Reddit, subreddit: str, from_date: datetime.datetime, to_date: datetime.datetime) -> list:
+def submissionFilter(submission):
+    """Filters the given submission to make sure it has text in its body.
+
+    Params:
+    - submission (dict): The submission to be filtered
+
+    Returns:
+    - contains_text (bool): True if the submission contains text, false otherwise
+    """
+    if (not submission['is_self'] or 'selftext' not in submission.keys() or not submission['selftext']
+            or submission['selftext'] == '[deleted]' or submission['selftext'] == '[removed]'):
+        return False
+    return True
+# End of submissionFilter()
+
+
+def api_request(subreddit: str, from_date: int, until_date: int) -> list:
     """Uses the reddit API to get the results of a single API request.
 
     Params:
     - reddit (praw.Reddit): The Reddit instance to use to run the quest
     - subreddit (str): The subreddit on which to run the request
-    - from_date (datetime.datetime): Date from which to start looking for submissions
-    - to_date (datetime.datetime): Date at which to stop looking for submissions
+    - from_date (int): UTC timestamp for the date from which to start looking for submissions
+    - until_date (int): UTC timestamp for the date at which to stop looking for submissions
 
     Returns:
-    - submissions (list<praw.Submission>): The list of submissions found
+    - submissions (list<dict>): The list of submissions found
     """
-    from_timestamp = int(from_date.timestamp())
-    to_timestamp = int(to_date.timestamp())
-    query = "is_self:1 timestamp:{}..{}".format(from_timestamp, to_timestamp)
-    results = reddit.subreddit(subreddit).search(query, sort="new", syntax="cloudsearch", limit=1000)
-    submissions = list(results)
+    print("from: {} to: {}".format(
+        datetime.datetime.fromtimestamp(from_date), datetime.datetime.fromtimestamp(until_date)))
+    response = requests.get(
+        "https://api.pushshift.io/reddit/search/submission/?subreddit={}&after={}&before={}&size=500&sort=asc".format(
+            subreddit, from_date, until_date-1
+        ))
+    response = response.json()
+    submissions = response['data']
+    submissions = filter(submissionFilter, submissions)
+    submissions = list(submissions)
     return submissions
 # End of api_request()
 
 
-def get_submissions(subreddit: str, from_date: datetime.datetime, to_date: datetime.datetime) -> list:
+def get_submissions(subreddit: str, from_date: datetime.datetime, until_date: datetime.datetime) -> list:
     """Uses the reddit API to find submissions between two dates.
 
     Params:
-    - from_date (datetime.datetime): Date from which to start looking for submissions
-    - to_date (datetime.datetime): Date at which to stop looking for submissions
-
-    Returns:
-    - submissions (list<praw.Submission>): The list of submissions found
+    - from_date (int): UTC timestamp for the date from which to start looking for submissions
+    - until_date (int): UTC timestamp for the date at which to stop looking for submissions
     """
-    reddit = praw.Reddit('reddit_seer')
-    returned_submissions = api_request(reddit, subreddit, from_date, to_date)
+    returned_submissions = api_request(subreddit, from_date, until_date)
     num_submissions = 0
-    original_to_date = to_date
+    original_from_date = datetime.datetime.fromtimestamp(from_date)
     while returned_submissions:
         num_submissions += len(returned_submissions)
+        latest_submission_timestamp = returned_submissions[-1]['created_utc']
         print('Got {} submissions from {} until {}'.format(num_submissions, 
-              datetime.datetime.fromtimestamp(returned_submissions[-1].created), original_to_date))
+              original_from_date,
+              datetime.datetime.fromtimestamp(latest_submission_timestamp)))
         submissions_to_csv(subreddit, returned_submissions)
-        to_date_timestamp = returned_submissions[-1].created
-        to_date = datetime.datetime.fromtimestamp(to_date_timestamp-1)
-        returned_submissions = api_request(reddit, subreddit, from_date, to_date)
+        returned_submissions = api_request(subreddit, latest_submission_timestamp, until_date)
     print("Got {:d} submissions!".format(num_submissions))
 # End of get_submissions()
 
@@ -79,12 +96,12 @@ def submissions_to_csv(subreddit: str, submissions: list):
         csv_writer = csv.writer(csv_file)
         if new_file:  # Write headings
             csv_writer.writerow(
-                ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext'])
+                ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext'])
         for submission in submissions:
-            csv_writer.writerow([submission.title, submission.score, submission.ups, submission.downs, 
-                                submission.num_comments, submission.over_18, 
-                                datetime.datetime.fromtimestamp(submission.created_utc), 
-                                submission.selftext.replace('\n', "\\n")])
+            csv_writer.writerow([submission['title'], submission['score'],
+                                submission['num_comments'], submission['over_18'], 
+                                datetime.datetime.fromtimestamp(submission['created_utc']), 
+                                submission['selftext'].replace('\n', "\\n")])
 # End of submissions_to_csv()
 
 
@@ -118,10 +135,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit from which to get data',
                         default='askreddit')
     parser.add_argument('-f', '--from_date', type=date_type,
-                        help='The date from which to start getting data (format = YYYY_MM_DD)',
+                        help='The date from which to start getting data (format = YYYY-MM-DD)',
                         default=datetime.datetime(2018, 2, 1))
     parser.add_argument('-u', '--until_date', type=date_type,
-                        help='The date until which to get data (format = YYYY_MM_DD)',
+                        help='The date until which to get data (format = YYYY-MM-DD)',
                         default=datetime.datetime(2018, 3, 1))
     args = parser.parse_args()
     print(args)
@@ -129,6 +146,25 @@ def parse_arguments() -> argparse.Namespace:
 # End of parse_arguments()
 
 
+def to_utc(date: datetime.datetime) -> int:
+    """Converts the date to a utc timestamp so it plays nice with the pushshift API.
+
+    Params:
+    - date (datetime.datetime): The date in local time
+
+    Returns:
+    - utc_timestamp (int): The utc timestamp
+    """
+    timestamp = date.timestamp()
+    utc_date = datetime.datetime.utcfromtimestamp(timestamp)
+    utc_timestamp = utc_date.timestamp()
+    utc_timestamp = int(utc_timestamp)
+    return utc_timestamp
+# End of to_utc()
+
+
 if __name__ == '__main__':
     args = parse_arguments()
-    get_submissions(args.subreddit, args.from_date, args.until_date)
+    utc_from_date = to_utc(args.from_date)
+    utc_until_date = to_utc(args.until_date)
+    get_submissions(args.subreddit, utc_from_date, utc_until_date)
