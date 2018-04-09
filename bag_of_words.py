@@ -7,6 +7,7 @@ import csv
 
 import pandas as pd
 import nltk
+from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 
@@ -96,11 +97,12 @@ def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     Returns:
     - modified_data_frame (pd.DataFrame): The data frame with the preprocessed column
     """
+    stemmer = PorterStemmer()
     column_data = data_frame[column]
     column_data = column_data.apply(lambda a: a.lower())
     column_data = column_data.apply(nltk.word_tokenize)
     column_data = column_data.apply(lambda a: [word for word in a if len(word) > 1])
-    column_data = column_data.apply(lambda a: [word for word in a if not word.isnumeric()])
+    column_data = column_data.apply(lambda a: [stemmer.stem(word) for word in a if not word.isnumeric()])
     column_data = column_data.apply(lambda a: " ".join(a))
     return column_data
 # End of preprocess_text()
