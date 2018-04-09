@@ -4,10 +4,11 @@
 import pathlib
 import argparse
 import csv
-import itertools
 
 import pandas as pd
 import nltk
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 
 
 class ColumnIndexes:
@@ -77,7 +78,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit from which to get data',
-                        default='askreddit')
+                        default='lifeofnorman')
     args = parser.parse_args()
     print(args)
     return args
@@ -100,6 +101,7 @@ def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     column_data = column_data.apply(nltk.word_tokenize)
     column_data = column_data.apply(lambda a: [word for word in a if len(word) > 1])
     column_data = column_data.apply(lambda a: [word for word in a if not word.isnumeric()])
+    column_data = column_data.apply(lambda a: " ".join(a))
     return column_data
 # End of preprocess_text()
 
@@ -112,12 +114,21 @@ def bag_of_words(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     - column (str): The name of the column for which to create the bag of words
 
     Returns:
-    - modified_data_frame (pd.DataFrame): The data frame with the given column replaced with the bag of words
+    - bags_data_frame (pd.DataFrame): The data frame containing the bags of words for each item in the given column
     """
-    column_data = preprocess_text(data_frame, column)
-    wordlist = column_data.values.tolist()
-    vocab = nltk.FreqDist(itertools.chain(*wordlist))
-    print(vocab.most_common(10))
+    data_frame_copy = data_frame.copy()
+    column_data = preprocess_text(data_frame_copy, column)
+    entries = column_data.values.tolist()
+    # Create bags of words using counts
+    countVectorizer = CountVectorizer()
+    bag = countVectorizer.fit_transform(entries)
+    # Use term frequency and inverse-document frequency to normalize the bag of words counts
+    tfidf = TfidfTransformer(use_idf=True, norm='l2', smooth_idf=True)
+    bags = tfidf.fit_transform(bag)
+    bags = bags.toarray()
+    bags_data_frame = pd.DataFrame(bags, columns=countVectorizer.vocabulary_.keys())
+    print(bags_data_frame.head())
+    return bags_data_frame
 # End of bag_of_words()
 
 
