@@ -3,13 +3,12 @@
 import math
 
 import pandas as pd
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.model_selection import GridSearchCV
+from sklearn.naive_bayes import MultinomialNB
 import numpy as np
 
 import bag_of_words as bow
 
-MODEL = BernoulliNB()
+MODEL = MultinomialNB()
 
 def extract_features(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Obtains training features from the data frame containing subreddit data.
@@ -102,9 +101,27 @@ def classify(data_frame: pd.DataFrame):
     test_Y = extract_targets(data_frame.loc[separator:, 'score'].values, quartiles)
 
     model = MODEL.fit(train_X, train_Y)
+
+    predicted = list(model.predict(test_X))
+    chart = [[0 for x in range(4)] for y in range(4)]
+    # Chart with x = actual, y = predicted
+    for x in range(0, len(test_Y)):
+      chart[test_Y[x] - 1][predicted[x] - 1] += 1
+    # End for loop
+
+    print("------------------------------------")
+    print("	 <25	<50	<75	<100")
+    print("------------------------------------")    
+    for x in range(0, 4):
+      line = "<" + str((x+1)*25) + "	| "
+      for y in range(0, 4):
+        line += str(chart[x][y]) + "	"
+      # End y
+      print(line)
+    # End x
+
     score = model.score(test_X, test_Y)
 
-    print("Done")
     print("R^2 value = (%% of variance explained by model) = {}".format(score))
 # End of regress()
 
