@@ -89,6 +89,7 @@ def classify(data_frame: pd.DataFrame):
     - 3: 3rd Quartile
     - 4: 4th Quartile
     """
+    data_frame = data_frame.sample(frac=1).reset_index(drop=True)
     features = extract_features(data_frame)
     num_rows = len(features.index)
     separator = math.floor(0.8 * num_rows)
