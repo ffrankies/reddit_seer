@@ -11,6 +11,7 @@ hopes that the new word exists in the lexiconself.
 :author Andrew Prins
 """
 
+import nltk
 from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
@@ -54,19 +55,28 @@ def analyzeSentiment(sent_text):
     tokens = word_tokenize(sent_text)
 
     # Determine if each word is in VADER corpus
-    # if in corpus, leave it alone
-    # if not in corpus, attempt lemmatizing to see if in corpus
+
     # Dictionary of all VADER words
     sia = SentimentIntensityAnalyzer()
     lex_dict = sia.make_lex_dict()
     lemmatizer = WordNetLemmatizer()
+
+    # Part of speech of each word
+    tokens_pos = nltk.pos_tag(tokens)
+
+    # Adjective -> J, R -> Adverb, Verb -> V
+    allowed_word_types = ["J"]
+
+    # if in corpus, leave it alone
+    # if not in corpus, attempt lemmatizing to see if in corpus
     for key, val in nonStopWords.items():
         # Check if lexicon has this word
         hasWord = lex_dict.get(val, None)
         if hasWord == None:
             # Word not in lex_dict
-            # Lemmatize assuming adjective and replace word
-            tokens[key] = lemmatizer.lemmatize(val, 'a')
+            # Lemmatize only allowed parts of speech
+            if tokens_pos[key][1][0] in allowed_word_types:
+                tokens[key] = lemmatizer.lemmatize(val, 'a')
 
     # Detokenize to modified sentiment text
     detokenizer = MosesDetokenizer()
@@ -119,9 +129,9 @@ if __name__ == '__main__':
         ss = sia.polarity_scores(long)
         print(ss['compound'], analyzeSentiment(long))
 
-    # Do not run this, trust me
-    # VADER: 1.0
-    # Lemmatized: 1.0
+    ## Do not run this, trust me
+    ## VADER: 1.0
+    ## Lemmatized: 1.0
     # from nltk.corpus import gutenberg
     # print()
     # bible = gutenberg.raw('bible-kjv.txt')
