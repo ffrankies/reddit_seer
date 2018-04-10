@@ -5,27 +5,11 @@ import math
 import pandas as pd
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.model_selection import GridSearchCV
+import numpy as np
 
 import bag_of_words as bow
 
 MODEL = BernoulliNB()
-
-# MIN_NEGATIVE = -5 # max score for negative
-# MIN_POSITIVE_1 = 5 # First level positive min score
-# MIN_POSITIVE_2 = 20
-# MIN_POSITIVE_3 = 40
-# MIN_POSITIVE_4 = 60
-# MIN_POSITIVE_5 = 200
-
-
-MIN_NEGATIVE = -5 # max score for negative
-MIN_POSITIVE_1 = 1 # First level positive min score
-MIN_POSITIVE_2 = 10
-MIN_POSITIVE_3 = 100
-MIN_POSITIVE_4 = 1000
-MIN_POSITIVE_5 = 10000
-
-
 
 def extract_features(data_frame: pd.DataFrame) -> pd.DataFrame:
     """Obtains training features from the data frame containing subreddit data.
@@ -43,28 +27,54 @@ def extract_features(data_frame: pd.DataFrame) -> pd.DataFrame:
     return features
 # End of extract_features()
 
-def extract_targets(scores: []) -> []:
+def get_quartiles(scores: []) -> []:
+  """Gets the quartile boundaries for the given array of scores.
+
+  Params:
+  - scores ([int]): array of integer scores of the posts
+
+  Returns:
+  - quartiles ([int]): an array of the 3 quartile boundaries (for q1|q2|q3|q4)
+  """
+  s = np.array(scores).astype(np.float)
+  q1 = math.floor(np.percentile(s, 25))
+  q2 = math.floor(np.percentile(s, 50))
+  q3 = math.floor(np.percentile(s, 75))
+
+  print("Q1 | Q2  | Q3  | Q4")
+  print("   " + str(q1) + "    " + str(q2) + "    " + str(q3))
+
+  return [q1,q2,q3]
+# End of get_quartiles()
+
+def extract_targets(scores: [], quartiles: []) -> []:
+  """Gets the quartile targets for the given array of scores.
+
+  Params:
+  - scores ([int]): array of integer scores of the posts
+  - quartiles ([int]): an array of the 3 quartile boundaries (for q1|q2|q3|q4)
+
+  Returns:
+  - targets ([int]): array of which quartile each post belongs in
+  """
   targets = [None] * len(scores)
+
+  q1 = quartiles[0]
+  q2 = quartiles[1]
+  q3 = quartiles[2]
 
   for i in range(0, len(scores)):
     score = int(scores[i])
-    if score > MIN_POSITIVE_5:
-      targets[i] = 6
-    elif score > MIN_POSITIVE_4:
-      targets[i] = 5
-    elif score > MIN_POSITIVE_3:
-      targets[i] = 4
-    elif score > MIN_POSITIVE_2:
-      targets[i] = 3
-    elif score > MIN_POSITIVE_1:
-      targets[i] = 2
-    elif score < MIN_NEGATIVE:
+    if score < q1:
       targets[i] = 1
-    else:
+    elif score < q2:
+      targets[i] = 2
+    elif score < q3:
       targets[i] = 3
+    else:
+      targets[i] = 4
   # end for loop
 
-  print(targets)
   return targets
 # End of extract_targets()
 
@@ -75,13 +85,10 @@ def classify(data_frame: pd.DataFrame):
     - data_frame (pd.DataFrame): data frame containing subreddit data
 
     Categories:
-    - O: Negative
-    - 1: Neutral
-    - 2: Positive 1
-    - 3: Positive 2
-    - 4: Positive 3
-    - 5: Positive 4
-    - 6: Positive 5
+    - 1: 1st Quartile
+    - 2: 2nd Quartile
+    - 3: 3rd Quartile
+    - 4: 4th Quartile
     """
     features = extract_features(data_frame)
     num_rows = len(features.index)
@@ -89,8 +96,10 @@ def classify(data_frame: pd.DataFrame):
     train_X = features.loc[:separator].values
     test_X = features.loc[separator:].values
 
-    train_Y = extract_targets(data_frame.loc[:separator, 'score'].values)
-    test_Y = extract_targets(data_frame.loc[separator:, 'score'].values)
+    quartiles = get_quartiles(data_frame.loc[:separator, 'score'].values)
+
+    train_Y = extract_targets(data_frame.loc[:separator, 'score'].values, quartiles)
+    test_Y = extract_targets(data_frame.loc[separator:, 'score'].values, quartiles)
 
     model = MODEL.fit(train_X, train_Y)
     score = model.score(test_X, test_Y)
