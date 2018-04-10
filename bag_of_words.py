@@ -1,6 +1,5 @@
 """Contains functions for creating bags of words out of lists of text.
 """
-
 import pathlib
 import argparse
 import csv
@@ -8,6 +7,7 @@ import csv
 import pandas as pd
 import nltk
 from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 
@@ -66,6 +66,7 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     csv_data = read_csv(subreddit)
     data_frame = pd.DataFrame(csv_data)
     data_frame.columns = ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext']
+    data_frame[['score', 'ups', 'downs']] = data_frame[['score', 'ups', 'downs']].apply(pd.to_numeric)
     print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()
@@ -98,10 +99,12 @@ def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     - modified_data_frame (pd.DataFrame): The data frame with the preprocessed column
     """
     stemmer = PorterStemmer()
+    stops = stopwords.words('english')
     column_data = data_frame[column]
     column_data = column_data.apply(lambda a: a.lower())
     column_data = column_data.apply(nltk.word_tokenize)
     column_data = column_data.apply(lambda a: [word for word in a if len(word) > 1])
+    column_data = column_data.apply(lambda a: [word for word in a if word not in stops])
     column_data = column_data.apply(lambda a: [stemmer.stem(word) for word in a if not word.isnumeric()])
     column_data = column_data.apply(lambda a: " ".join(a))
     return column_data
