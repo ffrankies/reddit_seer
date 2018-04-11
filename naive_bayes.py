@@ -2,11 +2,13 @@
 """
 import math
 
+import datetime
 import pandas as pd
 from sklearn.naive_bayes import MultinomialNB
 import numpy as np
 
 import bag_of_words as bow
+import sentimentAnalyzer as sa
 
 MODEL = MultinomialNB()
 
@@ -21,7 +23,16 @@ def extract_features(data_frame: pd.DataFrame) -> pd.DataFrame:
     """
     title_bow = bow.bag_of_words(data_frame, 'title')
     selftext_bow = bow.bag_of_words(data_frame, 'selftext')
-    features = pd.concat([title_bow, selftext_bow], axis=1)
+    title_sentiments = sa.analyzeSentiments(data_frame, 'title')
+    selftext_sentiments = sa.analyzeSentiments(data_frame, 'selftext')
+    post_time = timeofday(data_frame, 'created_utc')
+    features = pd.concat([
+      title_bow,
+      selftext_bow,
+      title_sentiments,
+      selftext_sentiments,
+      post_time
+    ], axis=1)
     print(features.head())
     return features
 # End of extract_features()
@@ -125,6 +136,29 @@ def classify(data_frame: pd.DataFrame):
 
     print("R^2 value = (%% of variance explained by model) = {}".format(score))
 # End of regress()
+
+def timeofday(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Creates a sentiments data frame out of the text in the given column of the data frame.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing text data
+    - column (str): The name of the column for which to analyze the sentiment
+
+    Returns:
+    - sentiments_data_frame (pd.DataFrame): The data frame containing the sentiment for each item in the given column. Note that sentiments are from 0 to 2, with 1 being neutral, 0 being negative, and 2 being positive.
+    """
+    data_frame_copy = data_frame.copy()
+    column_data = data_frame_copy[column]
+
+    column_data = column_data.apply(lambda a: datetime.datetime.strptime(a, "%Y-%m-%d %H:%M:%S").hour)
+
+    print(column_data)
+
+    entries = column_data.values.tolist()
+    
+    res_data_frame = pd.DataFrame(entries, columns=["sentiment"])
+    return res_data_frame
+# End of analyzeSentiments()
 
 
 if __name__ == "__main__":

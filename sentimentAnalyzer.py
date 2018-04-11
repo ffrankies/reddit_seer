@@ -16,6 +16,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from nltk.tokenize.moses import MosesDetokenizer
+import pandas as pd
 
 def tokenizeNonStopWords(s: str):
     """
@@ -77,7 +78,28 @@ def analyzeSentiment(sent_text: str):
 
     # Only interested in the compound score
     return sentiment['compound']
+# End of analyzeSentiment()
 
+def analyzeSentiments(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Creates a sentiments data frame out of the text in the given column of the data frame.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing text data
+    - column (str): The name of the column for which to analyze the sentiment
+
+    Returns:
+    - sentiments_data_frame (pd.DataFrame): The data frame containing the sentiment for each item in the given column. Note that sentiments are from 0 to 2, with 1 being neutral, 0 being negative, and 2 being positive.
+    """
+    data_frame_copy = data_frame.copy()
+    column_data = data_frame_copy[column]
+    column_data = column_data.apply(lambda a: analyzeSentiment(a))
+    column_data = column_data.apply(lambda a: a + 1)
+
+    entries = column_data.values.tolist()
+    
+    res_data_frame = pd.DataFrame(entries, columns=["sentiment"])
+    return res_data_frame
+# End of analyzeSentiments()
 
 
 if __name__ == '__main__':
