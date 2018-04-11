@@ -40,11 +40,13 @@ def extract_features_sentiment(data_frame: pd.DataFrame) -> pd.DataFrame:
 # End of extract_features_sentiment()
 
 
-def plot_results(predicted, actual, title, directory):
+def plot_results(predicted, actual, title, directory, r_squared):
     """plot_results
     """
+    print("Plotting the results for regression with {}".format(title))
     data_frame = pd.DataFrame({'predicted_score': predicted, 'actual_score': actual})
-    scatterplot = data_frame.plot('actual_score', 'predicted_score', kind='scatter')
+    scatterplot = data_frame.plot('actual_score', 'predicted_score', kind='scatter', 
+                                  title="{} | R^2 = {:0.2f}".format(title, r_squared))
     figure = scatterplot.get_figure()
     figure.savefig("{}/{}.png".format(directory, title))
 # End of plot_results()
@@ -60,18 +62,20 @@ def train(train_X: np.array, train_Y: np.array, test_X: np.array, test_Y: np.arr
     - test_X (np.array): Test inputs
     - test_Y (np.array): Test labels
     """
+    print('Training the linear regression model')
     model = LinearRegression()
+    # print('Shape of train_x = ', np.shape(train_X))
     model = model.fit(train_X, train_Y)
     r_squared = model.score(test_X, test_Y)
     print("R-squared value = {}".format(r_squared))
     predicted = model.predict(test_X)
-    print('predicted: ', predicted[:5])
-    print('test_Y: ', test_Y[:5])
+    # print('predicted: ', predicted[:5])
+    # print('test_Y: ', test_Y[:5])
     predicted = scalar.inverse_transform(predicted)
     test_Y = scalar.inverse_transform(test_Y)
-    print('inverse transformed predicted: ', predicted[:5])
-    print('inverse transformed test_Y: ', test_Y[:5])
-    plot_results(predicted, test_Y, title, directory)
+    # print('inverse transformed predicted: ', predicted[:5])
+    # print('inverse transformed test_Y: ', test_Y[:5])
+    plot_results(predicted, test_Y, title, directory, r_squared)
 # End of train()
 
 
@@ -87,13 +91,14 @@ def regress_bow(data_frame: pd.DataFrame, subreddit: str):
 def regress_sentiment(data_frame: pd.DataFrame, subreddit: str):
     """Regress sentiment
     """
+    print('Extracting sentiment')
     features = extract_features_sentiment(data_frame)
     scores = data_frame['score']
-    regress(features, scores, subreddit, 'sentiment_only')
+    regress(features, scores, subreddit, 'sentiment_only', True)
 # End of regress_sentiment()
 
 
-def regress(features, scores, subreddit, title):
+def regress(features, scores, subreddit, title, reshape_train_X=False):
     """Performs linear regression on the data in a data frame.
 
     Params:
@@ -104,22 +109,22 @@ def regress(features, scores, subreddit, title):
     scalar = StandardScaler()
     Y = scalar.fit_transform(scores.values.reshape(-1, 1))
     Y = np.squeeze(Y)
-    print('Scaled y: ', Y, ' | with len = ', len(Y))
+    # print('Scaled y: ', Y, ' | with len = ', len(Y))
     train_X = features.values[:separator]
     test_X = features.values[separator:]
     train_Y = Y[:separator]
     test_Y = Y[separator:]
-    print('Len train_X = {}, train_Y = {}, test_X = {}, test_Y = {}'.format(len(train_X), len(train_Y), len(test_X), len(test_Y)))
-    print('train_X = {}\ntrain_Y = {}'.format(train_X[:5], train_Y[:5]))
+    # print('Len train_X = {}, train_Y = {}, test_X = {}, test_Y = {}'.format(len(train_X), len(train_Y), len(test_X), len(test_Y)))
+    # print('train_X = {}\ntrain_Y = {}'.format(train_X[:5], train_Y[:5]))
+    if reshape_train_X:
+        train_X = train_X.reshape(-1, 1)
+        test_X = test_X.reshape(-1, 1)
     train(train_X, train_Y, test_X, test_Y, title, "./plots/{}".format(subreddit), scalar)
-    # model = model.fit(train_X, train_Y)
-    # score = model.score(test_X, test_Y)
-    # print("R^2 value = (%% of variance explained by model) = {}".format(score))
 # End of regress()
 
 
 if __name__ == "__main__":
     args = bow.parse_arguments()
     data_frame = bow.csv_to_data_frame(args.subreddit)
-    # regress_bow(data_frame, args.subreddit)
+    regress_bow(data_frame, args.subreddit)
     regress_sentiment(data_frame, args.subreddit)
