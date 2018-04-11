@@ -134,7 +134,7 @@ def classify(data_frame: pd.DataFrame):
 
     score = model.score(test_X, test_Y)
 
-    print("R^2 value = (%% of variance explained by model) = {}".format(score))
+    print("Accuracy = (%% accuracy against test data by model) = {}".format(score))
 # End of regress()
 
 def timeofday(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
