@@ -26,7 +26,6 @@ def extract_features_bow(data_frame: pd.DataFrame) -> pd.DataFrame:
     title_bow = bow.bag_of_words(data_frame, 'title')
     selftext_bow = bow.bag_of_words(data_frame, 'selftext')
     features = pd.concat([title_bow, selftext_bow], axis=1)
-    features = features.sample(frac=1).reset_index(drop=True)
     print(features.head())
     return features
 # End of extract_features()
@@ -42,7 +41,6 @@ def extract_features_sentiment(data_frame: pd.DataFrame) -> pd.DataFrame:
     - features (pd.DataFrame): the training features returned by the data frame
     """
     texts = data_frame['selftext']
-    texts = texts.sample(frac=1).reset_index(drop=True)
     texts = texts.apply(lambda a: sentimentAnalyzer.analyzeSentiment(a))
     scalar = StandardScaler()
     texts = scalar.fit_transform(texts.values.reshape(-1, 1))
@@ -63,7 +61,6 @@ def extract_features_tod(data_frame: pd.DataFrame) -> pd.DataFrame:
     - features (pd.DataFrame): the training features returned by the data frame
     """
     hours = data_frame['created_utc']
-    hours = hours.sample(frac=1).reset_index(drop=True)
     hours = hours.apply(lambda a: a.hour)
     scalar = StandardScaler()
     hours = scalar.fit_transform(hours.values.reshape(-1, 1))
@@ -104,7 +101,7 @@ def train(train_X: np.array, train_Y: np.array, test_X: np.array, test_Y: np.arr
     - test_Y (np.array): Test labels
     """
     print('Training the linear regression model')
-    model = LinearRegression()
+    model = LinearRegression(fit_intercept=False)
     # print('Shape of train_x = ', np.shape(train_X))
     model = model.fit(train_X, train_Y)
     r_squared = model.score(test_X, test_Y)
@@ -128,6 +125,23 @@ def regress_bow(data_frame: pd.DataFrame, subreddit: str):
     - subreddit (str): The subreddit for which data was extracted
     """
     features = extract_features_bow(data_frame)
+    features = features.sample(frac=1).reset_index(drop=True)
+    scores = data_frame['score']
+    regress(features, scores, subreddit, 'bag_of_words_only')
+# End of regress_bow()
+
+
+def regress_all(data_frame: pd.DataFrame, subreddit: str):
+    """Performs linear regression using all features available.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing subreddit data
+    - subreddit (str): The subreddit for which data was extracted
+    """
+    bows = extract_features_bow(data_frame)
+    sentiment = extract_features_sentiment(data_frame)
+    tod = extract_features_tod(data_frame)
+    features = pd.concat([bows, sentiment, tod], axis=1)
     scores = data_frame['score']
     regress(features, scores, subreddit, 'bag_of_words_only')
 # End of regress_bow()
@@ -172,13 +186,10 @@ def regress(features, scores, subreddit, title, reshape_train_X=False):
     scalar = StandardScaler()
     Y = scalar.fit_transform(scores.values.reshape(-1, 1))
     Y = np.squeeze(Y)
-    # print('Scaled y: ', Y, ' | with len = ', len(Y))
     train_X = features.values[:separator]
     test_X = features.values[separator:]
     train_Y = Y[:separator]
     test_Y = Y[separator:]
-    # print('Len train_X = {}, train_Y = {}, test_X = {}, test_Y = {}'.format(len(train_X), len(train_Y), len(test_X), len(test_Y)))
-    # print('train_X = {}\ntrain_Y = {}'.format(train_X[:5], train_Y[:5]))
     if reshape_train_X:
         train_X = train_X.reshape(-1, 1)
         test_X = test_X.reshape(-1, 1)
@@ -192,3 +203,4 @@ if __name__ == "__main__":
     regress_bow(data_frame, args.subreddit)
     regress_sentiment(data_frame, args.subreddit)
     regress_tod(data_frame, args.subreddit)
+    regress_all(data_frame, args.subreddit)
