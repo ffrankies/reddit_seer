@@ -2,6 +2,7 @@
 """
 import math
 import matplotlib
+from datetime import datetime
 matplotlib.use('Agg')
 
 import pandas as pd
@@ -14,7 +15,7 @@ import sentimentAnalyzer
 
 
 def extract_features_bow(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Obtains training features from the data frame containing subreddit data.
+    """Obtains the title and text bags of words from the data frame containing subreddit data.
 
     Params:
     - data_frame (pd.DataFrame): data frame containing subreddit data
@@ -25,23 +26,63 @@ def extract_features_bow(data_frame: pd.DataFrame) -> pd.DataFrame:
     title_bow = bow.bag_of_words(data_frame, 'title')
     selftext_bow = bow.bag_of_words(data_frame, 'selftext')
     features = pd.concat([title_bow, selftext_bow], axis=1)
+    features = features.sample(frac=1).reset_index(drop=True)
     print(features.head())
     return features
 # End of extract_features()
 
 
 def extract_features_sentiment(data_frame: pd.DataFrame) -> pd.DataFrame:
-    """Stuffy stuff
+    """Calculates the sentiment of the text from the data frame containing subreddit data.
+
+    Params:
+    - data_frame (pd.DataFrame): data frame containing subreddit data
+
+    Returns:
+    - features (pd.DataFrame): the training features returned by the data frame
     """
     texts = data_frame['selftext']
+    texts = texts.sample(frac=1).reset_index(drop=True)
     texts = texts.apply(lambda a: sentimentAnalyzer.analyzeSentiment(a))
-    print(texts.head())
+    scalar = StandardScaler()
+    texts = scalar.fit_transform(texts.values.reshape(-1, 1))
+    texts = np.squeeze(texts)
+    texts = pd.DataFrame(texts)
+    print('Texts = ', texts.head())
     return texts
 # End of extract_features_sentiment()
 
 
-def plot_results(predicted, actual, title, directory, r_squared):
-    """plot_results
+def extract_features_tod(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Calculates the time of day (hour of submission) of the text from the data frame containing subreddit data.
+
+    Params:
+    - data_frame (pd.DataFrame): data frame containing subreddit data
+
+    Returns:
+    - features (pd.DataFrame): the training features returned by the data frame
+    """
+    hours = data_frame['created_utc']
+    hours = hours.sample(frac=1).reset_index(drop=True)
+    hours = hours.apply(lambda a: a.hour)
+    scalar = StandardScaler()
+    hours = scalar.fit_transform(hours.values.reshape(-1, 1))
+    hours = np.squeeze(hours)
+    hours = pd.DataFrame(hours)
+    print('Hours = ', hours.head())
+    return hours
+# End of extract_features_tod()
+
+
+def plot_results(predicted: np.array, actual: np.array, title: str, directory: str, r_squared: float):
+    """Plots the linear regression results.
+
+    Params:
+    - predicted (np.array): The predicted score values
+    - actual (np.array): The actual score values
+    - title (str): The title of the plot
+    - directory (str): The directory in which to save the plot
+    - r_squared (float): The r^2 value of the linear regression model
     """
     print("Plotting the results for regression with {}".format(title))
     data_frame = pd.DataFrame({'predicted_score': predicted, 'actual_score': actual})
@@ -80,7 +121,11 @@ def train(train_X: np.array, train_Y: np.array, test_X: np.array, test_Y: np.arr
 
 
 def regress_bow(data_frame: pd.DataFrame, subreddit: str):
-    """Regress bow
+    """Performs linear regression using the bags of words as the only features.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing subreddit data
+    - subreddit (str): The subreddit for which data was extracted
     """
     features = extract_features_bow(data_frame)
     scores = data_frame['score']
@@ -89,13 +134,31 @@ def regress_bow(data_frame: pd.DataFrame, subreddit: str):
 
 
 def regress_sentiment(data_frame: pd.DataFrame, subreddit: str):
-    """Regress sentiment
+    """Performs linear regression using the sentiment of the body text as the only feature.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing subreddit data
+    - subreddit (str): The subreddit for which data was extracted
     """
     print('Extracting sentiment')
     features = extract_features_sentiment(data_frame)
     scores = data_frame['score']
     regress(features, scores, subreddit, 'sentiment_only', True)
 # End of regress_sentiment()
+
+
+def regress_tod(data_frame: pd.DataFrame, subreddit: str):
+    """Performs linear regression using the time of day (hour of posting) as the only feature.
+
+    Params:
+    - data_frame (pd.DataFrame): The data frame containing subreddit data
+    - subreddit (str): The subreddit for which data was extracted
+    """
+    print('Extracting time of day')
+    features = extract_features_tod(data_frame)
+    scores = data_frame['score']
+    regress(features, scores, subreddit, 'time_of_day', True)
+# End of regress_tod()
 
 
 def regress(features, scores, subreddit, title, reshape_train_X=False):
@@ -128,3 +191,4 @@ if __name__ == "__main__":
     data_frame = bow.csv_to_data_frame(args.subreddit)
     regress_bow(data_frame, args.subreddit)
     regress_sentiment(data_frame, args.subreddit)
+    regress_tod(data_frame, args.subreddit)
