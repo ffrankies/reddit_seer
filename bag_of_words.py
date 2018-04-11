@@ -15,12 +15,10 @@ from sklearn.feature_extraction.text import TfidfTransformer
 class ColumnIndexes:
     title = 0
     score = 1
-    ups = 2
-    downs = 3
-    num_comments = 4
-    over_18 = 5
-    created_utc = 6
-    selftext = 7
+    num_comments = 2
+    over_18 = 3
+    created_utc = 4
+    selftext = 5
 
 
 def read_csv(subreddit: str) -> list:
@@ -42,7 +40,7 @@ def read_csv(subreddit: str) -> list:
         for row in csv_reader:
             if not row:  # If row is empty
                 continue
-            if len(row) != 8:  # If there is an extra or missing row
+            if len(row) != 6:  # If there is an extra or missing row
                 continue
             if not row[ColumnIndexes.selftext]:  # If there is no post text
                 continue
@@ -65,8 +63,9 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     """
     csv_data = read_csv(subreddit)
     data_frame = pd.DataFrame(csv_data)
-    data_frame.columns = ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext']
-    data_frame[['score', 'ups', 'downs']] = data_frame[['score', 'ups', 'downs']].apply(pd.to_numeric)
+    data_frame.columns = ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext']
+    data_frame[['score']] = data_frame[['score']].apply(pd.to_numeric)
+    data_frame['created_utc'] = data_frame['created_utc'].apply(pd.to_datetime)
     print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()
