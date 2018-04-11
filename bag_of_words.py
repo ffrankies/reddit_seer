@@ -34,7 +34,7 @@ def read_csv(subreddit: str) -> list:
     submissions = pathlib.Path("./data/{}/submissions.csv".format(subreddit))
     if not submissions.is_file():
         raise Exception("No data for the given subreddit exists: {}".format(subreddit))
-    with submissions.open('r') as csv_file:
+    with submissions.open('r', encoding="utf-8") as csv_file:
         csv_reader = csv.reader(csv_file)
         csv_reader.__next__()  # Skip over column names
         for row in csv_reader:
@@ -64,8 +64,11 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     csv_data = read_csv(subreddit)
     data_frame = pd.DataFrame(csv_data)
     data_frame.columns = ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext']
+<<<<<<< HEAD
     data_frame[['score']] = data_frame[['score']].apply(pd.to_numeric)
     data_frame['created_utc'] = data_frame['created_utc'].apply(pd.to_datetime)
+=======
+>>>>>>> 40e8b9bd5897960eaa534d3ca11f43c3cf358b4e
     print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()

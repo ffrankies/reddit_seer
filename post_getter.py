@@ -92,7 +92,7 @@ def submissions_to_csv(subreddit: str, submissions: list):
     new_file = True
     if file_path.is_file():  # pylint: disable=E1101
         new_file = False
-    with file_path.open('a') as csv_file:  # pylint: disable=E1101
+    with file_path.open('a', encoding="utf-8") as csv_file:  # pylint: disable=E1101
         csv_writer = csv.writer(csv_file)
         if new_file:  # Write headings
             csv_writer.writerow(

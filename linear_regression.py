@@ -102,17 +102,12 @@ def train(train_X: np.array, train_Y: np.array, test_X: np.array, test_Y: np.arr
     """
     print('Training the linear regression model')
     model = LinearRegression(fit_intercept=False)
-    # print('Shape of train_x = ', np.shape(train_X))
     model = model.fit(train_X, train_Y)
     r_squared = model.score(test_X, test_Y)
     print("R-squared value = {}".format(r_squared))
     predicted = model.predict(test_X)
-    # print('predicted: ', predicted[:5])
-    # print('test_Y: ', test_Y[:5])
     predicted = scalar.inverse_transform(predicted)
     test_Y = scalar.inverse_transform(test_Y)
-    # print('inverse transformed predicted: ', predicted[:5])
-    # print('inverse transformed test_Y: ', test_Y[:5])
     plot_results(predicted, test_Y, title, directory, r_squared)
 # End of train()
 
@@ -143,7 +138,7 @@ def regress_all(data_frame: pd.DataFrame, subreddit: str):
     tod = extract_features_tod(data_frame)
     features = pd.concat([bows, sentiment, tod], axis=1)
     scores = data_frame['score']
-    regress(features, scores, subreddit, 'bag_of_words_only')
+    regress(features, scores, subreddit, 'all_features')
 # End of regress_bow()
 
 
