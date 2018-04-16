@@ -90,6 +90,25 @@ def plot_results(predicted: np.array, actual: np.array, title: str, directory: s
 # End of plot_results()
 
 
+def remove_outliers(data_frame: pd.DataFrame) -> pd.DataFrame:
+    """Converts all score outliers to the value of the score in the 90th percentile of scores.
+
+    Params:
+    - data_frame (pd.DataFrame): Contains post data
+
+    Returns:
+    - modified_data_frame (pd.DataFrame): Contains post data, but with all scores above the 90th percentile 
+                                          converted to the 90th percentile value.
+    """
+    scores = data_frame['score'].values
+    scores_90_percentile = np.percentile(scores, 90)
+    print('90th percentile score = ', scores_90_percentile)
+    modified_data_frame = data_frame.copy()
+    modified_data_frame.loc[modified_data_frame['score'] > scores_90_percentile, 'score'] = scores_90_percentile
+    return modified_data_frame
+# End of remove_outliers() 
+
+
 def train(train_X: np.array, train_Y: np.array, test_X: np.array, test_Y: np.array, title: str, directory: str, 
           scalar: StandardScaler):
     """Trains a linear regression model, tests it, and plots predicted scores vs actual scores.
@@ -119,9 +138,10 @@ def regress_bow(data_frame: pd.DataFrame, subreddit: str):
     - data_frame (pd.DataFrame): The data frame containing subreddit data
     - subreddit (str): The subreddit for which data was extracted
     """
+    modified_data_frame = remove_outliers(data_frame)
     features = extract_features_bow(data_frame)
     features = features.sample(frac=1).reset_index(drop=True)
-    scores = data_frame['score']
+    scores = modified_data_frame['score']
     regress(features, scores, subreddit, 'bag_of_words_only')
 # End of regress_bow()
 
@@ -133,11 +153,12 @@ def regress_all(data_frame: pd.DataFrame, subreddit: str):
     - data_frame (pd.DataFrame): The data frame containing subreddit data
     - subreddit (str): The subreddit for which data was extracted
     """
+    modified_data_frame = remove_outliers(data_frame)
     bows = extract_features_bow(data_frame)
     sentiment = extract_features_sentiment(data_frame)
     tod = extract_features_tod(data_frame)
     features = pd.concat([bows, sentiment, tod], axis=1)
-    scores = data_frame['score']
+    scores = modified_data_frame['score']
     regress(features, scores, subreddit, 'all_features')
 # End of regress_bow()
 
@@ -150,8 +171,9 @@ def regress_sentiment(data_frame: pd.DataFrame, subreddit: str):
     - subreddit (str): The subreddit for which data was extracted
     """
     print('Extracting sentiment')
+    modified_data_frame = remove_outliers(data_frame)
     features = extract_features_sentiment(data_frame)
-    scores = data_frame['score']
+    scores = modified_data_frame['score']
     regress(features, scores, subreddit, 'sentiment_only', True)
 # End of regress_sentiment()
 
@@ -164,8 +186,9 @@ def regress_tod(data_frame: pd.DataFrame, subreddit: str):
     - subreddit (str): The subreddit for which data was extracted
     """
     print('Extracting time of day')
+    modified_data_frame = remove_outliers(data_frame)
     features = extract_features_tod(data_frame)
-    scores = data_frame['score']
+    scores = modified_data_frame['score']
     regress(features, scores, subreddit, 'time_of_day', True)
 # End of regress_tod()
 
