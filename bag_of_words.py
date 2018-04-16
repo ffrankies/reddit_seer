@@ -66,6 +66,7 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     data_frame.columns = ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext']
     data_frame[['score']] = data_frame[['score']].apply(pd.to_numeric)
     data_frame['created_utc'] = data_frame['created_utc'].apply(pd.to_datetime)
+    data_frame = data_frame.sample(frac=1).reset_index(drop=True)
     print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()
