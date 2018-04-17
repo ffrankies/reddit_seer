@@ -70,7 +70,7 @@ def get_submissions(subreddit: str, from_date: datetime.datetime, until_date: da
     while returned_submissions:
         num_submissions += len(returned_submissions)
         latest_submission_timestamp = returned_submissions[-1]['created_utc']
-        print('Got {} submissions from {} until {}'.format(num_submissions, 
+        print('Got {} submissions from {} until {}'.format(num_submissions,
               original_from_date,
               datetime.datetime.fromtimestamp(latest_submission_timestamp)))
         submissions_to_csv(subreddit, returned_submissions)
@@ -99,8 +99,8 @@ def submissions_to_csv(subreddit: str, submissions: list):
                 ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext'])
         for submission in submissions:
             csv_writer.writerow([submission['title'], submission['score'],
-                                submission['num_comments'], submission['over_18'], 
-                                datetime.datetime.fromtimestamp(submission['created_utc']), 
+                                submission['num_comments'], submission['over_18'],
+                                datetime.datetime.fromtimestamp(submission['created_utc']),
                                 submission['selftext'].replace('\n', "\\n")])
 # End of submissions_to_csv()
 
@@ -133,13 +133,13 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit from which to get data',
-                        default='askreddit')
+                        default='askscience')
     parser.add_argument('-f', '--from_date', type=date_type,
                         help='The date from which to start getting data (format = YYYY-MM-DD)',
-                        default=datetime.datetime(2018, 2, 1))
+                        default=datetime.datetime(2010, 1, 1))
     parser.add_argument('-u', '--until_date', type=date_type,
                         help='The date until which to get data (format = YYYY-MM-DD)',
-                        default=datetime.datetime(2018, 3, 1))
+                        default=datetime.datetime(2018, 1, 1))
     args = parser.parse_args()
     print(args)
     return args

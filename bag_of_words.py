@@ -34,7 +34,7 @@ def read_csv(subreddit: str) -> list:
     submissions = pathlib.Path("./data/{}/submissions.csv".format(subreddit))
     if not submissions.is_file():
         raise Exception("No data for the given subreddit exists: {}".format(subreddit))
-    with submissions.open('r', encoding="utf-8") as csv_file:
+    with submissions.open('r', encoding="ISO-8859-1") as csv_file: # https://stackoverflow.com/questions/19699367/unicodedecodeerror-utf-8-codec-cant-decode-byte
         csv_reader = csv.reader(csv_file)
         csv_reader.__next__()  # Skip over column names
         for row in csv_reader:
@@ -79,7 +79,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit from which to get data',
-                        default='lifeofnorman')
+                        default='askscience')
     args = parser.parse_args()
     print(args)
     return args
@@ -87,8 +87,8 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
-    """Preprocesses the text in the given column of a data frame and returns it as a new data frame with just 
-    that column. 
+    """Preprocesses the text in the given column of a data frame and returns it as a new data frame with just
+    that column.
 
     Params:
     - data_frame (pd.DataFrame): The data frame containing text data
