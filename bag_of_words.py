@@ -14,12 +14,12 @@ from sklearn.feature_extraction.text import TfidfTransformer
 class ColumnIndexes:
     title = 0
     score = 1
-    ups = 2
-    downs = 3
-    num_comments = 4
-    over_18 = 5
-    created_utc = 6
-    selftext = 7
+    # ups = 2
+    # downs = 3
+    num_comments = 2
+    over_18 = 3
+    created_utc = 4
+    selftext = 5
 
 
 def read_csv(subreddit: str) -> list:
@@ -35,13 +35,13 @@ def read_csv(subreddit: str) -> list:
     submissions = pathlib.Path("./data/{}/submissions.csv".format(subreddit))
     if not submissions.is_file():
         raise Exception("No data for the given subreddit exists: {}".format(subreddit))
-    with submissions.open('r') as csv_file:
+    with submissions.open('r', encoding="ISO-8859-1") as csv_file: # https://stackoverflow.com/questions/19699367/unicodedecodeerror-utf-8-codec-cant-decode-byte
         csv_reader = csv.reader(csv_file)
         csv_reader.__next__()  # Skip over column names
         for row in csv_reader:
             if not row:  # If row is empty
                 continue
-            if len(row) != 8:  # If there is an extra or missing row
+            if len(row) != 6:  # If there is an extra or missing row
                 continue
             if not row[ColumnIndexes.selftext]:  # If there is no post text
                 continue
@@ -64,7 +64,7 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     """
     csv_data = read_csv(subreddit)
     data_frame = pd.DataFrame(csv_data)
-    data_frame.columns = ['title', 'score', 'ups', 'downs', 'num_comments', 'over_18', 'created_utc', 'selftext']
+    data_frame.columns = ['title', 'score', 'num_comments', 'over_18', 'created_utc', 'selftext']
     print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()
@@ -78,7 +78,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit from which to get data',
-                        default='lifeofnorman')
+                        default='askscience')
     args = parser.parse_args()
     print(args)
     return args
@@ -86,8 +86,8 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def preprocess_text(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
-    """Preprocesses the text in the given column of a data frame and returns it as a new data frame with just 
-    that column. 
+    """Preprocesses the text in the given column of a data frame and returns it as a new data frame with just
+    that column.
 
     Params:
     - data_frame (pd.DataFrame): The data frame containing text data
