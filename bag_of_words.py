@@ -67,7 +67,7 @@ def csv_to_data_frame(subreddit: str) -> pd.DataFrame:
     data_frame[['score']] = data_frame[['score']].apply(pd.to_numeric)
     data_frame['created_utc'] = data_frame['created_utc'].apply(pd.to_datetime)
     data_frame = data_frame.sample(frac=1).reset_index(drop=True)
-    print(data_frame.head())
+    # print(data_frame.head())
     return data_frame
 # End of csv_to_data_frame()
 
@@ -132,7 +132,7 @@ def bag_of_words(data_frame: pd.DataFrame, column: str) -> pd.DataFrame:
     bags = tfidf.fit_transform(bag)
     bags = bags.toarray()
     bags_data_frame = pd.DataFrame(bags, columns=countVectorizer.vocabulary_.keys())
-    print(bags_data_frame.head())
+    # print(bags_data_frame.head())
     return bags_data_frame
 # End of bag_of_words()
 
